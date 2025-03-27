@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>自洽计划-玛尼堆</title>
+    <style>
+        body {
+            background: #F5A3C7;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 格桑花瓣样式 */
+        .petal {
+            position: absolute;
+            width: 18px;
+            height: 30px;
+            background: linear-gradient(145deg, rgba(255,182,193,0.5), rgba(255,255,255,0.7));
+            clip-path: ellipse(35% 50% at 50% 0);
+            animation: fall 8s linear infinite;
+            transform-origin: 50% 100%;
+            opacity: 0.8;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-10vh) rotate(0deg); }
+            100% { transform: translateY(110vh) rotate(720deg); }
+        }
+
+        /* 玛尼堆容器 */
+        #mani-stone {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -120%);
+            z-index: 1;
+            width: 680px;
+            height: 500px;
+        }
+
+        /* 石块样式 */
+        .stone {
+            position: absolute;
+            width: 60px;
+            height: 40px;
+            background: #8D6E63;
+            clip-path: polygon(
+                0 25%, 10% 0, 30% 10%, 45% 0,
+                65% 15%, 85% 5%, 100% 25%,
+                90% 60%, 70% 100%, 30% 90%, 0 70%
+            );
+            border-radius: 8px;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.2);
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* 输入界面 */
+        .input-container {
+            position: fixed;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            text-align: center;
+        }
+
+        #text-input {
+            width: 300px;
+            padding: 15px;
+            border: 3px solid #8EC5D1;
+            border-radius: 30px;
+            background: white;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        #send-btn {
+            padding: 15px 25px;
+            background: #8EC5D1;
+            border: none;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #send-btn:hover {
+            background: #7AB0C0;
+        }
+
+        /* 石刻文字 */
+        .stone-text {
+            position: absolute;
+            width: 90%;
+            height: 60%;
+            top: 20%;
+            left: 5%;
+            color: rgba(255,255,255,0.9);
+            font: 14px '楷体', cursive;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .scroll-text {
+            animation: scroll 8s linear infinite;
+            display: inline-block;
+            padding-left: 100%;
+        }
+
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+    </style>
+</head>
+<body>
+    <div id="mani-stone"></div>
+    <div class="input-container">
+        <h3 style="color:#636363; margin-bottom:15px;">自我祝颂</h3>
+        <div>
+            <input type="text" id="text-input" placeholder="输入或说出您的祝福...">
+            <button id="send-btn">发送</button>
+        </div>
+    </div>
+
+    <script>
+        // 初始化花瓣
+        function createPetals() {
+            for(let i = 0; i < 25; i++) {
+                const petal = document.createElement('div');
+                petal.className = 'petal';
+                petal.style.left = Math.random() * 100 + 'vw';
+                petal.style.animationDelay = Math.random() * 8 + 's';
+                petal.style.transform = `rotate(${Math.random() * 30 - 15}deg)`;
+                document.body.appendChild(petal);
+            }
+        }
+        createPetals();
+
+        // 玛尼堆系统
+        const STONE_COLORS = [
+            '#A9A9A9', '#6D4C41', '#BCAAA4',
+            '#8D6E63', '#795548', '#A1887F'
+        ];
+        const MAX_LAYERS = 10;
+        let currentLayer = 0;
+        let stoneCount = 0;
+        let lastColorIndex = -1;
+
+        // 颜色管理
+        function getNewColor() {
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * STONE_COLORS.length);
+            } while(newIndex === lastColorIndex);
+            lastColorIndex = newIndex;
+            return STONE_COLORS[newIndex];
+        }
+
+        // 石块生成
+        function createStone(text) {
+            const stone = document.createElement('div');
+            stone.className = 'stone';
+            stone.style.background = getNewColor();
+
+            // 文字雕刻
+            const textDiv = document.createElement('div');
+            textDiv.className = 'stone-text';
+            const displayText = text.slice(0,4);
+            
+            if(text.length > 4) {
+                const scrollingText = document.createElement('div');
+                scrollingText.className = 'scroll-text';
+                scrollingText.textContent = text;
+                textDiv.appendChild(scrollingText);
+            } else {
+                textDiv.textContent = displayText;
+                textDiv.style.textAlign = 'center';
+            }
+            
+            stone.appendChild(textDiv);
+            return stone;
+        }
+
+        // 物理碰撞模拟
+        function animateStone(stone, isOverflow) {
+            const baseX = window.innerWidth / 2;
+            const baseY = window.innerHeight / 2;
+            
+            if(isOverflow) {
+                // 滚落动画
+                const angle = Math.random() * 60 - 30;
+                const distance = 300 + Math.random() * 200;
+                
+                stone.style.transition = 'all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                stone.style.transform = `
+                    rotate(${angle}deg)
+                    translate(${distance * Math.sign(angle)}px, 200px)
+                    scale(0.7)
+                `;
+                
+                setTimeout(() => stone.remove(), 1200);
+            } else {
+                // 堆叠定位
+                const layerCapacity = MAX_LAYERS - currentLayer;
+                const xPos = (stoneCount % layerCapacity) * 65 - (layerCapacity * 32.5) + baseX;
+                const yPos = baseY - currentLayer * 45;
+                
+                stone.style.left = xPos + 'px';
+                stone.style.top = yPos + 'px';
+                stone.style.transform = `
+                    rotate(${Math.random() * 15 - 7.5}deg)
+                    scale(${0.9 + Math.random() * 0.2})
+                `;
+            }
+        }
+
+        // 输入处理
+        document.getElementById('send-btn').addEventListener('click', processInput);
+        document.getElementById('text-input').addEventListener('keypress', e => {
+            if(e.key === 'Enter') processInput();
+        });
+
+        // 语音识别
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'zh-CN';
+        recognition.continuous = false;
+        
+        document.getElementById('text-input').addEventListener('click', () => {
+            recognition.start();
+        });
+
+        recognition.onresult = e => {
+            const transcript = e.results[0][0].transcript;
+            document.getElementById('text-input').value = transcript;
+            processInput();
+        }
+
+        function processInput() {
+            const input = document.getElementById('text-input');
+            const text = input.value.trim();
+            if(!text) return;
+
+            // 更新堆叠状态
+            const isOverflow = (stoneCount % MAX_LAYERS) >= (MAX_LAYERS - currentLayer);
+            const stone = createStone(text);
+            
+            animateStone(stone, isOverflow);
+            document.getElementById('mani-stone').appendChild(stone);
+
+            stoneCount++;
+            if(stoneCount % MAX_LAYERS === 0) currentLayer++;
+            
+            input.value = '';
+        }
+    </script>
+</body>
+</html>
